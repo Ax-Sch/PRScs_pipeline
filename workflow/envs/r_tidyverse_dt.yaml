@@ -1,0 +1,10 @@
+name: r_tidyverse_dt
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-tidyverse
+  - r-data.table
+  - r-r.utils

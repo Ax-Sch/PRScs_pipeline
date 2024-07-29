@@ -1,0 +1,11 @@
+name: snakemake7
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - snakemake=7.3.7
+  - mamba
+  - tabulate=0.8.10
+  - singularity
+  - unzip

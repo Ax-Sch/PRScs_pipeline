@@ -1,0 +1,193 @@
+configfile: "config/config.yaml"
+
+# functions that return input file paths:
+
+def P_dbsnp_on_base_input(pheno):
+	add_rsid=config["base_datasets"][pheno]["add_rsid"]==True
+	if add_rsid:
+		grch=str(config["base_datasets"][pheno]["GRCh"])
+		inputs=["results/"+ pheno +"/base_data.tsv.gz", "results/dbsnp/dbnsp_index_"+ grch +".tsv.gz"]
+	else:
+		inputs="results/"+ pheno +"/base_data.tsv.gz"
+	return(inputs)
+	
+def base_in_filter_gwas_bim(pheno):
+	P_rsid_base_recalc=config["base_datasets"][pheno]["add_rsid"]==True or config["base_datasets"][pheno]["LOG10P_to_P"]==True
+	if P_rsid_base_recalc:
+		base_input="results/"+ pheno +"/base_data_dbsnp.tsv.gz"
+	else:
+		base_input="results/"+ pheno + "/base_data.tsv.gz"
+	return(base_input)
+
+phenotypes=(list(config["base_datasets"].keys()))
+
+
+# rules
+rule all:
+	input:
+		expand("results/PRS_values/{phenotype}.profile", phenotype=phenotypes)
+
+
+rule prepare_base_data:
+	input:
+		sumstat_file=lambda wildcards: config["base_datasets"][wildcards.phenotype]["sumstat_file"],
+		rename_file=lambda wildcards: config["base_datasets"][wildcards.phenotype]["rename_file"],
+	output:
+		"results/{phenotype}/base_data.tsv.gz"
+	params: 
+		partition=config["general"]["queue_medium"],
+		col_sep=lambda wildcards: config["base_datasets"][wildcards.phenotype]["col_sep"]
+	conda: "envs/r_tidyverse_dt.yaml"
+	script:
+		"scripts/prepare_base_data.R"
+
+
+
+rule filter_gwas_bim:
+	input:
+		bim=lambda wildcards: "results/bim_w_rsid/bim_w_rsid.bim" if config["target_dataset"]["add_rsid"]==True else config["target_dataset"]["bim"],
+		gwas_file=lambda wildcards: base_in_filter_gwas_bim(wildcards.phenotype),
+	output:
+		bim="results/{phenotype}/overlapping.bim",
+		sst_file="results/{phenotype}/overlapping_gwas.sst",
+	params:
+		p_cutoff=lambda wildcards: config["base_datasets"][wildcards.phenotype]["p_cutoff"],
+		partition=config["general"]["queue_medium"],
+	conda: "envs/r_tidyverse_dt.yaml"
+	script: 
+		"scripts/filter_bim.R"
+
+
+rule run_PRScs:
+	input:
+		ref_dir=config["general"]["ld_ref_dir"],
+		bim="results/{phenotype}/overlapping.bim",
+		sst_file="results/{phenotype}/overlapping_gwas.sst",
+	output:
+		out=expand("results/{phenotype}/_pst_eff_a1_b0.5_phiauto_chr{CHR}.txt", allow_missing=True, CHR=config["general"]["chromosomes"]),
+	params:
+		bim_prefix=lambda wildcards, input: input["bim"][:-4],
+		n_gwas=lambda wildcards: config["base_datasets"][wildcards.phenotype]["n_gwas"],
+		out_dir="results/{phenotype}/"
+	log:
+		"logs/{phenotype}/run_PRScs.log"
+	resources: cpus=4, mem_mb=32000, time_job=720, additional=" "
+	conda: "envs/prscs.yaml"
+	shell:
+		"""
+		export MKL_NUM_THREADS={resources.cpus}
+		export NUMEXPR_NUM_THREADS={resources.cpus}
+		export OMP_NUM_THREADS={resources.cpus}
+
+		python3 PRScs/PRScs.py \
+		--ref_dir={input.ref_dir} \
+		--bim_prefix={params.bim_prefix} \
+		--sst_file={input.sst_file} \
+		--n_gwas={params.n_gwas} \
+		--out_dir={params.out_dir} \
+		--seed=1 &> {log}
+		"""
+
+
+rule concat_prscs_output:
+	input:
+		expand("results/{phenotype}/_pst_eff_a1_b0.5_phiauto_chr{CHR}.txt", allow_missing=True, CHR=config["general"]["chromosomes"]),
+	output:
+		"results/{phenotype}/PRSconcat.tsv"
+	shell: 
+		"""
+		cat {input} > {output}
+		"""
+
+
+rule calculate_PRS:
+	input:
+		fam=config["target_dataset"]["fam"],
+		bim=lambda wildcards: "results/bim_w_rsid/bim_w_rsid.bim" if config["target_dataset"]["add_rsid"]==True else config["target_dataset"]["bim"],
+		bed=config["target_dataset"]["bed"],
+		PRS="results/{phenotype}/PRSconcat.tsv", 
+	output:	
+		PRSs="results/PRS_values/{phenotype}.profile"
+	resources: cpus=1, mem_mb=32000, time_job=720, additional=" "
+	params:
+		partition=config["general"]["queue_medium"],
+		out_pref="results/PRS_values/{phenotype}",
+	conda: "envs/plink.yaml"
+	shell:
+		"""
+		plink \
+		--fam {input.fam} \
+		--bim {input.bim} \
+		--bed {input.bed} \
+		--score {input.PRS} 2 5 6 sum \
+		--out {params.out_pref}
+		"""
+
+
+#### Section for adding dbsnp-ids
+rule download_dbsnp:
+	output: 
+		vcf="results/dbsnp/dbsnp_GRCh{genome_version}.vcf.gz",
+		tbi="results/dbsnp/dbsnp_GRCh{genome_version}.vcf.gz.tbi",
+	resources: cpus=1, mem_mb=4000, time_job=720
+	conda: "envs/curl.yaml"
+	params:
+		partition=config["general"]["queue_medium"],
+		vcf=lambda wildcards: config["general"]["dbsnp_37_vcf"] if wildcards.genome_version=="37" else config["general"]["dbsnp_38_vcf"],
+		tbi=lambda wildcards: config["general"]["dbsnp_37_tbi"] if wildcards.genome_version=="37" else config["general"]["dbsnp_38_tbi"],
+	shell:
+		"""
+		curl {params.vcf} --output {output.vcf}
+		curl {params.tbi} --output {output.tbi}
+		"""
+
+
+rule make_dbsnp_index:
+	input:
+		vcf="results/dbsnp/dbsnp_GRCh{genome_version}.vcf.gz",
+		tbi="results/dbsnp/dbsnp_GRCh{genome_version}.vcf.gz.tbi",
+	output:
+		dbsnp_index="results/dbsnp/dbnsp_index_{genome_version}.tsv.gz",
+		tmp=temp("results/dbsnp/dbnsp_index_{genome_version}.tmp"),
+	conda: "envs/bcftools.yaml"
+	resources: cpus=1, mem_mb=4000, time_job=720
+	params:
+		partition=config["general"]["queue_medium"],
+	shell:
+		"""
+		echo "CHROM\tPOS\tREF\tALT\tRSID" > {output.tmp}
+		bcftools norm -m-any {input.vcf} | \
+		bcftools query -f "%CHROM\t%POS\t%REF\t%ALT\t%ID\n" | \
+		cat {output.tmp} - | \
+		gzip > {output.dbsnp_index}
+		"""
+
+
+rule dbsnp_on_target:
+	input:
+		"results/dbsnp/dbnsp_index_"+ str(config["target_dataset"]["GRCh"]) +".tsv.gz",
+		config["target_dataset"]["bim"],
+	output:
+		"results/bim_w_rsid/bim_w_rsid.bim"
+	conda: "envs/r_tidyverse_dt.yaml"
+	resources: cpus=1, mem_mb=4000, time_job=720
+	params:
+		partition=config["general"]["queue_medium"],
+	script: "scripts/dbsnp_on_target.R"
+
+
+
+rule P_dbsnp_on_base:
+	input:
+		lambda wildcards: P_dbsnp_on_base_input(wildcards.phenotype)
+	output:
+		temp("results/{phenotype}/base_data_dbsnp.tsv.gz")
+	conda: "envs/r_tidyverse_dt.yaml"
+	resources: cpus=1, mem_mb=4000, time_job=720
+	params:
+		partition=config["general"]["queue_medium"],
+		LOG10P_to_P=lambda wildcards: config["base_datasets"][wildcards.phenotype]["LOG10P_to_P"],
+		add_rsid=lambda wildcards: config["base_datasets"][wildcards.phenotype]["LOG10P_to_P"],
+	script: "scripts/P_dbsnp_on_base.R"
+
+

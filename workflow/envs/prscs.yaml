@@ -1,0 +1,6 @@
+name: prscs
+channels:
+  - anaconda
+dependencies:
+  - scipy
+  - h5py

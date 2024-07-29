@@ -1,0 +1,7 @@
+chromosome	CHR
+base_pair_location	POS
+variant_id	SNP
+other_allele	A1
+effect_allele	A2
+beta	BETA
+p_value	P
