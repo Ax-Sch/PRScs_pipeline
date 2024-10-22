@@ -187,7 +187,7 @@ rule P_dbsnp_on_base:
 	params:
 		partition=config["general"]["queue_medium"],
 		LOG10P_to_P=lambda wildcards: config["base_datasets"][wildcards.phenotype]["LOG10P_to_P"],
-		add_rsid=lambda wildcards: config["base_datasets"][wildcards.phenotype]["LOG10P_to_P"],
+		add_rsid=lambda wildcards: config["base_datasets"][wildcards.phenotype]["add_rsid"],
 	script: "scripts/P_dbsnp_on_base.R"
 
 
