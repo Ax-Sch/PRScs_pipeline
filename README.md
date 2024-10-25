@@ -49,7 +49,7 @@ conda env create -f workflow/envs/snakemake7.yaml
 ```
 conda activate snakemake7
 snakemake -np # do a dry run first
-snakemake --cores 4 --use-conda
+snakemake --cores 4 --use-conda --conda-frontend conda
 ```
 In the last command, modify the cores argument to run on more cores.
 
@@ -62,7 +62,7 @@ Target data:
 
 Base data:
 - The base data set should have a first line containing the header. Give a arbitrary name to the phenotype in the config file and spedify the location of the GWAS sum stats file.
-- The header can be renamed according to a renaming-file containing two columns old_name, new_name (tab separated file with header). If no renaming should be applied, still specify a renaming file, but just put the header without any additional lines. 
+- The header can be renamed according to a renaming-file containing two columns old_name, new_name (tab separated file with header; see example data). The following column names are expected: CHR, POS, SNP, A1, A2, BETA, P. 
 - Indicate the separator of the columns (e.g. "\t" for tab)
 - Specify if rsids should be added, if so, specify the reference genome that is used in your file.
 - Specify if a column named LOG10P (after renaming) with -log10(P) values should be converted to P-values
