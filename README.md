@@ -62,12 +62,13 @@ Target data:
 
 Base data:
 - The base data set should have a first line containing the header. Give a arbitrary name to the phenotype in the config file and spedify the location of the GWAS sum stats file.
-- The header can be renamed according to a renaming-file containing two columns old_name, new_name (tab separated file with header; see example data). The following column names are expected: CHR, POS, SNP, A1, A2, BETA, P. 
+- The header can be renamed in the config file to match the expected column names: CHR, POS, SNP, A1, A2, BETA, P. A1 would be the effect allele here.
 - Indicate the separator of the columns (e.g. "\t" for tab)
 - Specify if rsids should be added, if so, specify the reference genome that is used in your file.
 - Specify if a column named LOG10P (after renaming) with -log10(P) values should be converted to P-values
 - Specify a cutoff of p-values for prefiltering if this is wanted
 - Specify the number of individuals that were analyzed in the GWAS (this is directly handed over to PRScs n_gwas)
+- If wanted, specify parameters that will be passed to PRScs
 
 Output:
 Output will be written to the folder "results". In particular, the scores of the individuals from the target data set can be found in "results/PRS_values/". These can be loaded e.g. with R for further analyses.

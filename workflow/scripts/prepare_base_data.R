@@ -10,25 +10,30 @@ COLS_ONE_REQUIRED=c( "P",  "LOG10P")
 COLS_TO_KEEP=unique(c(COLS_ALL_REQUIRED, COLS_ONE_REQUIRED))
 
 sumstat_file=snakemake@input[["sumstat_file"]]
-rename_file=snakemake@input[["rename_file"]]
+column_renaming=snakemake@params[["column_renaming"]]
 col_sep=snakemake@params[["col_sep"]]
 out_file=snakemake@output[[1]]
 
 #read in sumstats
 base_data<-fread(sumstat_file, sep = col_sep)
+print("first few columns of the base data:")
 head(base_data)
 
-# rename columns
-rename_scheme<-fread(rename_file, header=TRUE, sep="\t")
-head(rename_scheme)
-
-if (nrow(rename_scheme)>0){
-for (old_col in rename_scheme$old_name){
-  new_col=unlist(rename_scheme[old_name==old_col,new_name])
+print("rename columns:")
+if (length(column_renaming)>0){
+for (i in 1:length(column_renaming)){
+  new_col=names(column_renaming)[i]
+  old_col=as.character(column_renaming[i])
+  print(paste0("renaming ", old_col, " to ", new_col))
   setnames(x = base_data, old = old_col, new=new_col)
 }
 }
-  
+
+# Check if the column 'SNP' exists, and if not, create it
+if (!"SNP" %in% names(base_data)) {
+  base_data[, SNP := paste(CHR, POS, A1, A2, sep = ":")]
+}
+ 
 # remove duplicate SNPs
 base_data_uniq<-unique(base_data, by = "SNP")
 base_data_uniq<-base_data_uniq[!(is.na(SNP) | SNP=="" |  SNP==" ")]

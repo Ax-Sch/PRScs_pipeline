@@ -19,6 +19,15 @@ def base_in_filter_gwas_bim(pheno):
 		base_input="results/"+ pheno + "/base_data.tsv.gz"
 	return(base_input)
 
+def prscs_output(pheno):
+	param_a=config["base_datasets"][pheno]["param_a"]
+	param_b=config["base_datasets"][pheno]["param_b"]
+	param_phi=config["base_datasets"][pheno]["param_phi"]
+	chroms=config["general"]["chromosomes"]
+	out_files=["results/"+ pheno + "/_pst_eff_a" + str(param_a) + "_b" + str(param_b) + "_phi" + str(param_phi) + "_chr" + str(chrom) + ".txt" for chrom in chroms]
+	return(out_files)
+
+
 phenotypes=(list(config["base_datasets"].keys()))
 
 
@@ -31,12 +40,12 @@ rule all:
 rule prepare_base_data:
 	input:
 		sumstat_file=lambda wildcards: config["base_datasets"][wildcards.phenotype]["sumstat_file"],
-		rename_file=lambda wildcards: config["base_datasets"][wildcards.phenotype]["rename_file"],
 	output:
 		"results/{phenotype}/base_data.tsv.gz"
 	params: 
 		partition=config["general"]["queue_medium"],
-		col_sep=lambda wildcards: config["base_datasets"][wildcards.phenotype]["col_sep"]
+		column_renaming=lambda wildcards: config["base_datasets"][wildcards.phenotype]["column_renaming"],
+		col_sep=lambda wildcards: config["base_datasets"][wildcards.phenotype]["col_sep"],
 	conda: "envs/r_tidyverse_dt.yaml"
 	script:
 		"scripts/prepare_base_data.R"
@@ -64,13 +73,15 @@ rule run_PRScs:
 		bim="results/{phenotype}/overlapping.bim",
 		sst_file="results/{phenotype}/overlapping_gwas.sst",
 	output:
-		out=expand("results/{phenotype}/_pst_eff_a1_b0.5_phiauto_chr{CHR}.txt", allow_missing=True, CHR=config["general"]["chromosomes"]),
+		out="results/{phenotype}/_pst_eff_a{param_a}_b{param_b}_phi{param_phi}_chr{CHR}.txt",
 	params:
 		bim_prefix=lambda wildcards, input: input["bim"][:-4],
+		param_phi=lambda wildcards: "" if wildcards.param_phi=="auto" "" else "--phi=" + wildcards.param_phi,
 		n_gwas=lambda wildcards: config["base_datasets"][wildcards.phenotype]["n_gwas"],
-		out_dir="results/{phenotype}/"
+		additional_prscs_parameters=lambda wildcards: config["base_datasets"][wildcards.phenotype]["additional_prscs_parameters"],
+		out_dir="results/{phenotype}/",
 	log:
-		"logs/{phenotype}/run_PRScs.log"
+		"logs/{phenotype}/_pst_eff_a{param_a}_b{param_b}_phi{param_phi}_chr{CHR}.log"
 	resources: cpus=4, mem_mb=32000, time_job=720, additional=" "
 	conda: "envs/prscs.yaml"
 	shell:
@@ -83,15 +94,20 @@ rule run_PRScs:
 		--ref_dir={input.ref_dir} \
 		--bim_prefix={params.bim_prefix} \
 		--sst_file={input.sst_file} \
+		--chrom={wildcards.CHR} \
+		--a={wildcards.param_a} \
+		--b={wildcards.param_b} \
+		{params.param_phi} \
 		--n_gwas={params.n_gwas} \
 		--out_dir={params.out_dir} \
+		{params.additional_prscs_parameters} \
 		--seed=1 &> {log}
 		"""
 
 
 rule concat_prscs_output:
 	input:
-		expand("results/{phenotype}/_pst_eff_a1_b0.5_phiauto_chr{CHR}.txt", allow_missing=True, CHR=config["general"]["chromosomes"]),
+		lambda wildcards: prscs_output(wildcards.phenotype),
 	output:
 		"results/{phenotype}/PRSconcat.tsv"
 	shell: 

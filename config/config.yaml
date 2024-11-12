@@ -4,25 +4,49 @@
 # A rename-file has to be given, however, and header columns can automatically be renamed. 
 # Please see the example data, e.g. "example_data/example_phenotype.regenie_chr3.gz_rename"
  base_datasets: 
+ 
   example_phenotype: # Start of the values for the example_phenotyp; call it as you like.
    sumstat_file: "example_data/example_phenotype.regenie_chr3.gz" # provide the path to your GWAS sum stats here; a header is required, can be gzipped
-   rename_file: "example_data/example_phenotype.regenie_chr3.gz_rename" # needs always to be given, even if no renaming is needed. If no renaming is needed, specify the following dummy file: resources/no_renaming.txt; please see the example data, e.g. "example_data/example_phenotype.regenie_chr3.gz_rename" and use those files as templates.
+   column_renaming: # if the columns are already named according  
+    CHR: "CHROM"
+    POS: "GENPOS"
+    SNP: "ID"
+    A1: "ALLELE0" #effect allele
+    A2: "ALLELE1" #other allele
+    BETA: "BETA"
+    LOG10P: "LOG10P"
    col_sep: " " # separator of columns in this base data set; could be also be "\t", ";" or something else
-   add_rsid: True # put False if there is already a RSID-column, which should be called/renamed "SNP"
+   add_rsid: True # put False if there is already a RSID-column, which should be called/renamed "SNP" (see above)
    GRCh: 38 # Reference genome (allowed: 37 or 38), only relevant if rsids should be added
    LOG10P_to_P: True # convert a column that has to be called LOG10P (after renaming) to P-values
    p_cutoff: 1 # prefilter SNPs according to this p-value (all below are retained)
    n_gwas: 600 # number of individuals / n_gwas for PRScs
+   param_a: 1 # 1 is the default
+   param_b: 0.5 # 0.5 is the default
+   param_phi: "auto" # auto is the default
+   additional_prscs_parameters: ""
    
   height: # second base data set; otherwise same as above; copy-paste and then modify this structure for your own, real base data sets.
    sumstat_file: "example_data/GCST90245992_buildGRCh37_chr3.tsv.gz"
-   rename_file: "example_data/GCST90245992_buildGRCh37_chr3.tsv.gz_rename"
+   column_renaming: 
+    CHR: "chromosome"
+    POS: "base_pair_location"
+    SNP: "variant_id"
+    A1: "effect_allele" #effect allele
+    A2: "other_allele" #other allele
+    BETA: "beta"
+    P: "p_value"
    col_sep: "\t"
    add_rsid: True
    GRCh: 37
    LOG10P_to_P: False
    p_cutoff: 1
    n_gwas: 1597374
+   param_a: 1 # 1 is the default
+   param_b: 0.5 # 0.5 is the default
+   param_phi: "1e-04" # auto is the default; for GWAS with smaller sample sizes fix to certain values (see git of PRScs), e.g.: 1e-04
+   additional_prscs_parameters: ""
+
 
 
 # Target dataset: Binary plink file set which has undergone QC is assumed; rsids can be present in the bim file or it can be added.
@@ -32,6 +56,7 @@
   fam: "example_data/TGP_EUR_maf05_pruned_chr3.fam"
   add_rsid: True # if rsids are present in the bim file set to "False"
   GRCh: 38 # only relevant when rsIDs should be added (when add_rsid is set to True)
+
 
 
 # general settings
