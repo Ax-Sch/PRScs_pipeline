@@ -27,6 +27,12 @@ def prscs_output(pheno):
 	out_files=["results/"+ pheno + "/_pst_eff_a" + str(param_a) + "_b" + str(param_b) + "_phi" + str(param_phi) + "_chr" + str(chrom) + ".txt" for chrom in chroms]
 	return(out_files)
 
+# check if regions are given, that should be included/excluded
+def retrieve_region_val(pheno, region_var):
+	if region_var in config["base_datasets"][pheno]:
+		return(config["base_datasets"][pheno][region_var])
+	else:
+		return(False)
 
 phenotypes=(list(config["base_datasets"].keys()))
 
@@ -46,6 +52,8 @@ rule prepare_base_data:
 		partition=config["general"]["queue_medium"],
 		column_renaming=lambda wildcards: config["base_datasets"][wildcards.phenotype]["column_renaming"],
 		col_sep=lambda wildcards: config["base_datasets"][wildcards.phenotype]["col_sep"],
+		exclude_regions=lambda wildcards: retrieve_region_val(wildcards.phenotype, "exclude_regions"),
+		select_regions=lambda wildcards: retrieve_region_val(wildcards.phenotype, "select_regions"),
 	conda: "envs/r_tidyverse_dt.yaml"
 	script:
 		"scripts/prepare_base_data.R"

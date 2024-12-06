@@ -16,6 +16,24 @@
     BETA: "BETA"
     LOG10P: "LOG10P"
    col_sep: " " # separator of columns in this base data set; could be also be "\t", ";" or something else
+   exclude_regions: # chromosomal regions to exclude
+    MHC: # MHC as example
+     CHR: 6 
+     START: 28000000
+     END: 34000000
+    OTHER: # random region as second example
+     CHR: 3 
+     START: 28000000
+     END: 34000000
+   select_regions: # chromosomal regions to select
+    OTHER: # random region as second example
+     CHR: 3 
+     START: 10000000
+     END: 250000000
+    OTHER2: # random region as second example
+     CHR: 3 
+     START: 1
+     END: 10000000
    add_rsid: True # put False if there is already a RSID-column, which should be called/renamed "SNP" (see above)
    GRCh: 38 # Reference genome (allowed: 37 or 38), only relevant if rsids should be added
    LOG10P_to_P: True # convert a column that has to be called LOG10P (after renaming) to P-values
@@ -37,6 +55,8 @@
     BETA: "beta"
     P: "p_value"
    col_sep: "\t"
+   exclude_regions: False # do not exclude regions
+   select_regions: False # do not specifically select a region
    add_rsid: True
    GRCh: 37
    LOG10P_to_P: False

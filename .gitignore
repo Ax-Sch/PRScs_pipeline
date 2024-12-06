@@ -1,0 +1,8 @@
+results/
+logs/
+PRScs/
+prs_example/
+.snakemake/
+.DS_Store
+.Rhistory
+example_data/ldblk_ukbb_eur
