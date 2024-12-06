@@ -16,21 +16,21 @@
     BETA: "BETA"
     LOG10P: "LOG10P"
    col_sep: " " # separator of columns in this base data set; could be also be "\t", ";" or something else
-   exclude_regions: # chromosomal regions to exclude
+   exclude_regions: # Chromosomal regions to exclude. If not needed, just give False; see below.
     MHC: # MHC as example
      CHR: 6 
      START: 28000000
      END: 34000000
-    OTHER: # random region as second example
+    Example_region: # random region as second example
      CHR: 3 
      START: 28000000
      END: 34000000
-   select_regions: # chromosomal regions to select
-    OTHER: # random region as second example
+   select_regions: # Chromosomal regions to select; if at least one region is given here, only those regions will be retained; performed after the exclusion. If not needed, just give False; see below.
+    Example_region: # random region as example
      CHR: 3 
      START: 10000000
      END: 250000000
-    OTHER2: # random region as second example
+    Example_region2: # random region as second example
      CHR: 3 
      START: 1
      END: 10000000
