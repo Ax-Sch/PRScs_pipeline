@@ -42,6 +42,7 @@ if (!"SNP" %in% names(base_data)) {
 base_data_uniq<-unique(base_data, by = "SNP")
 base_data_uniq<-base_data_uniq[!(is.na(SNP) | SNP=="" |  SNP==" ")]
 
+# make sure alleles are in upper case
 base_data_uniq <- base_data_uniq[, `:=`(A1=toupper(A1), A2=toupper(A2))]
 
 print(paste("Removed", nrow(base_data) - nrow(base_data_uniq), 

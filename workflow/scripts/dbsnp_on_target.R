@@ -27,7 +27,9 @@ bim_rs_second<-bim_rs%>%
 
 bim_rs_second<-bim_rs_second %>% 
   mutate(SNP=ifelse(is.na(RSID), SNP, RSID))%>%
-  select(-RSID)
+  select(-RSID)%>%
+  mutate(A1=toupper(A1),
+         A2=toupper(A2))
 
 write_tsv(x = bim_rs_second,
           file = bim_out_path,

@@ -69,12 +69,12 @@
 
 
 
-# Target dataset: Binary plink file set which has undergone QC is assumed; rsids can be present in the bim file or it can be added.
+# Target dataset: Binary plink file set which has undergone QC is assumed; rsids can be present in the bim file or it can be added. Upper case of alleles is expected (but if rsids are added, lower case alleles will be converted to upper case).
  target_dataset:
   bim: "example_data/TGP_EUR_maf05_pruned_chr3.bim"
   bed: "example_data/TGP_EUR_maf05_pruned_chr3.bed"
   fam: "example_data/TGP_EUR_maf05_pruned_chr3.fam"
-  add_rsid: True # if rsids are present in the bim file set to "False"
+  add_rsid: True # if rsids are present in the bim file set to "False"; if this is true, rsids will be added and alleles will be converted to upper case (if not already in upper case).
   GRCh: 38 # only relevant when rsIDs should be added (when add_rsid is set to True)
 
 
