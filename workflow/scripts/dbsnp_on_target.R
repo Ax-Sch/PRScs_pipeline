@@ -13,7 +13,8 @@ bim<-read_tsv(file = bim_path,
               col_names=c("CHR","SNP","cM","BP","A1","A2"))
 bim<-bim %>%
   mutate(CHR=as.character(CHR))%>%
-  mutate(CHR=str_replace(string=CHR,pattern=fixed("23"), replacement = "X"))
+  mutate(CHR=str_replace(string=CHR,pattern=fixed("23"), replacement = "X"))%>%
+  mutate(CHR = str_replace(CHR, pattern = fixed("chr"), replacement = ""))
 
 bim_rs<-bim%>%
   left_join(dbsnp_dst, by=c("CHR"="CHROM","BP"="POS","A1"="REF","A2"="ALT"))
